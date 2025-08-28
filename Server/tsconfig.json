@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",                    // Modern JS features
+    "module": "ESNext",                    // Use ES modules
+    "moduleResolution": "bundler",         // Modern module resolution
+    "lib": ["ES2022"],                     // Standard library features
+    "outDir": "./dist",                    // Output directory for compiled JS
+    "rootDir": "./src",                    // Source directory
+    "strict": true,                        // Enable all strict type checking
+    "esModuleInterop": true,               // Interop between CommonJS and ES modules
+    "skipLibCheck": true,                  // Skip type checking of declaration files
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,                   // Generate .d.ts files
+    "declarationMap": true,                // Generate source maps for declarations
+    "sourceMap": true,                     // Generate source maps
+    "removeComments": true,                // Remove comments from output
+    "noImplicitAny": true,                 // Error on implicit 'any' type
+    "noImplicitReturns": true,             // Error when not all code paths return
+    "noImplicitThis": true,                // Error on 'this' expressions with implied 'any'
+    //"noUnusedLocals": true,                // Error on unused local variables
+    //"noUnusedParameters": true,            // Error on unused parameters
+    "exactOptionalPropertyTypes": true,    // Stricter optional property handling
+    "allowSyntheticDefaultImports": true   // Allow default imports from modules with no default export
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
