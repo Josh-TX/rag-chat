@@ -2,7 +2,7 @@ export type Role = "user" | 'assistant'
 
 export type Message = {
     id: number,
-    parentId?: number | undefined,
+    parentId?: string | undefined,
     role: Role,
     content: string,
     date: Date,
@@ -14,23 +14,18 @@ export type Context = {
     content: string,
 }
 
-export type NewUserMessage = {
-    content: string,
-    contextList?: Context[] | undefined
-}
 
 export type Chat = {
     chatId: string,
     messages: Message[],
-    currentMessageIds: number[],
+    currentMessageIds: string[],
     inProgress: boolean
 }
 
 export type ChatRequest = {
-    chatId?: string,
-    existingMessages?: Message[],
-    newMessage: NewUserMessage,
-    currentMessageIds?: number[]
+    chatId: string | undefined
+    messages: Message[],
+    currentMessageIds: string[]
 }
 
 export type ChatResponse = {
@@ -38,9 +33,8 @@ export type ChatResponse = {
 }
 
 export type StreamChatSSEData = { chat: Chat } 
-| { id: number, contextList: Context[] | null } 
+| { id: number, contextList: Context[] | undefined } 
 | { id: number, append: string } 
-| { end: true}
 
 export type MistralMessage = {
     role: 'user' | 'assistant' | 'system';

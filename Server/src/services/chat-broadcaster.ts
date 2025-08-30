@@ -1,32 +1,38 @@
+import { StreamChatSSEData } from "../models";
+
 type SSEClient = {
-    onData: (event: { data: string }) => void;
+    onData: (data: StreamChatSSEData) => void;
     onClose: () => void;
 };
 
+interface ChatReceiver {
+    addClient(client: SSEClient): () => void
+}
+interface ChatSender {
+    emit(data: StreamChatSSEData): void,
+    close(): void
+}
 
-export class ChatBroadcaster {
+class ChatBroadcaster {
     private clients: Set<SSEClient> = new Set();
-    private buffer: string[] = [];
+    private buffer: StreamChatSSEData[] = [];
     private closed = false;
 
     constructor() { }
 
-    addClient(client: SSEClient) {
+    addClient(client: SSEClient): () => void {
         this.clients.add(client);
-
-        // Immediately replay buffered messages
-        this.buffer.forEach((msg) => client.onData({ data: msg }));
-
+        this.buffer.forEach((msg) => client.onData(msg));
         return () => {
             this.clients.delete(client);
         };
     }
 
-    emit(chunk: string) {
+    emit(data: StreamChatSSEData): void {
         if (this.closed) return;
-        this.buffer.push(chunk);
+        this.buffer.push(data);
         for (const client of this.clients.values()) {
-            client.onData({ data: chunk });
+            client.onData(data);
         }
     }
 
@@ -42,25 +48,28 @@ export class ChatBroadcaster {
 
 const chatBroadcasters = new Map<string, ChatBroadcaster>();
 
-export function createBroadcaster(id: string): ChatBroadcaster {
+export function createBroadcaster(id: string): ChatSender {
     let chatBroadcaster = chatBroadcasters.get(id);
     if (chatBroadcaster) {
         throw `broadcaster with id ${id} already exists`;
     }
     chatBroadcaster = new ChatBroadcaster();
     chatBroadcasters.set(id, chatBroadcaster);
-    return chatBroadcaster;
+    return {
+        emit: (data: StreamChatSSEData) => chatBroadcaster.emit(data),
+        close: () => {
+            chatBroadcaster.close();
+            chatBroadcasters.delete(id);
+        }
+    };
 }
 
-export function tryGetBroadcaster(id: string): ChatBroadcaster | undefined {
-    let chatBroadcaster = chatBroadcasters.get(id);
-    return chatBroadcaster;
-}
-
-export function removeBroadcaster(id: string): void {
+export function tryGetBroadcaster(id: string): ChatReceiver | undefined {
     let chatBroadcaster = chatBroadcasters.get(id);
     if (chatBroadcaster){
-        chatBroadcaster.close();
+        return {
+            addClient: (client: SSEClient) => chatBroadcaster.addClient(client)
+        }
     }
-    chatBroadcasters.delete(id);
+    return undefined;
 }

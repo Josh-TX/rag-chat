@@ -1,10 +1,8 @@
 <script lang="ts">
-  let count: number = $state(0)
-  const increment = () => {
-    count += 1
-  }
+  import type { ChatRequest, ChatResponse, StreamChatSSEData } from '@models';
+  import Markdown from 'svelte-exmarkdown';
   let textAreaValue = $state("hello");
-  let messages = $state<string[]>([]);
+  let responseText = $state("");
   let eventSource: EventSource | null = null;
 
   function onclick(){
@@ -22,27 +20,40 @@
     })
   }
   async function startStream() {
-    var response = await fetch("/chat/chat3", {
-      method: "POST", // Specify method
+    responseText = "";
+    var request: ChatRequest = {
+      newMessage: {content: textAreaValue}
+    }
+    var response: ChatResponse = await fetch("/chat", {
+      method: "POST",
       headers: {
-        "Content-Type": "application/json" // Tell the server you're sending JSON
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({messages: [{role: "user", content: textAreaValue}]}) // Convert JS object to JSON string
+      body: JSON.stringify(request)
     }).then(z => z.json())
     
-
-    // Close existing connection if any
     if (eventSource) {
       eventSource.close();
       eventSource = null;
     }
 
-    // Initialize SSE
-    eventSource = new EventSource("/chat/chat3/" + response.conversationId);
+    eventSource = new EventSource("/chat/stream?chatId=" + response.chatId);
 
-    // Listen for messages
     eventSource.onmessage = (event: MessageEvent<string>) => {
-      messages = [...messages, event.data];
+      var data = JSON.parse(event.data);
+      if ("chat" in data) {
+          console.log(data.chat);
+        } else if ("contextList" in data) {
+          console.log(data.id, data.contextList);
+        } else if ("append" in data) {
+          responseText += data.append;
+          console.log(data.id, data.append);
+        } else if ("end" in data) {
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+        }
     };
 
     eventSource.onerror = (err: Event) => {
@@ -58,8 +69,4 @@
 <h1>this is the chat section</h1>
 <textarea bind:value={textAreaValue}></textarea>
 <button onclick={startStream}>enter</button>
-<ul>
-  {#each messages as msg}
-    <li>{msg}</li>
-  {/each}
-</ul>
+<Markdown md={responseText} />
