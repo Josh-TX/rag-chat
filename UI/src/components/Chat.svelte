@@ -1,72 +1,64 @@
 <script lang="ts">
-  import type { ChatRequest, ChatResponse, StreamChatSSEData } from '@models';
-  import Markdown from 'svelte-exmarkdown';
-  let textAreaValue = $state("hello");
-  let responseText = $state("");
-  let eventSource: EventSource | null = null;
+  import type { Chat, ChatRequest, ChatResponse } from "@models";
+  import Message from "./Message.svelte";
+  import { startStream } from "../helpers";
+  let chat = $state<Chat>({
+    chatId: "1",
+    currentMessageIds: [],
+    messages: [],
+    inProgress: false,
+  });
+  let currentMessages = $derived(
+    chat.currentMessageIds
+      .map((id) => chat.messages.find((z) => z.id == id))
+      .filter((z) => !!z),
+  );
 
-  function onclick(){
-    fetch("/chat", {
+  async function onSubmit(content: string) {
+    var request: ChatRequest = {
+      chatId: chat.chatId,
+      currentMessageIds: chat.currentMessageIds,
+      existingMessages: chat.messages,
+      newMessage: { content: content },
+    };
+    var response: ChatResponse = await fetch("/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        messages: [
-          { content: textAreaValue,
-            role: "user"
-           }]
-      }),
-    })
-  }
-  async function startStream() {
-    responseText = "";
-    var request: ChatRequest = {
-      newMessage: {content: textAreaValue}
-    }
-    var response: ChatResponse = await fetch("/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(request)
-    }).then(z => z.json())
-    
-    if (eventSource) {
-      eventSource.close();
-      eventSource = null;
-    }
+      body: JSON.stringify(request),
+    }).then((z) => z.json());
 
-    eventSource = new EventSource("/chat/stream?chatId=" + response.chatId);
-
-    eventSource.onmessage = (event: MessageEvent<string>) => {
-      var data = JSON.parse(event.data);
+    startStream(response.chatId, (data) => {
       if ("chat" in data) {
-          console.log(data.chat);
-        } else if ("contextList" in data) {
-          console.log(data.id, data.contextList);
-        } else if ("append" in data) {
-          responseText += data.append;
-          console.log(data.id, data.append);
-        } else if ("end" in data) {
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-          }
+        chat.currentMessageIds = data.chat.currentMessageIds;
+        chat.messages = data.chat.messages;
+        chat.inProgress = data.chat.inProgress;
+        chat.chatId = data.chat.chatId;
+      } else if ("contextList" in data) {
+        console.log(data.id, data.contextList);
+      } else if ("append" in data) {
+        var message = chat.messages.find((z) => z.id == data.id);
+        if (message) {
+          message.content += data.append;
         }
-    };
-
-    eventSource.onerror = (err: Event) => {
-      console.error("SSE error:", err);
-      if (eventSource) {
-        eventSource.close();
-        eventSource = null;
+      } else if ("end" in data) {
+        chat.inProgress = false;
       }
-    };
+    });
   }
 </script>
 
 <h1>this is the chat section</h1>
-<textarea bind:value={textAreaValue}></textarea>
-<button onclick={startStream}>enter</button>
-<Markdown md={responseText} />
+{#each currentMessages as message (message.id)}
+  <Message
+    text={message.content}
+    isEditing={false}
+    {onSubmit}
+    role={message.role}
+  ></Message>
+{/each}
+{#if !chat.inProgress}
+  next message:
+  <Message text={""} isEditing={true} {onSubmit} role="user"></Message>
+{/if}

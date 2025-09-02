@@ -1,8 +1,8 @@
 import { FastifyInstance, } from "fastify";
 import mistralClient from "../mistral-client"
 import textContent from '../prompts/summary.prompt'
-import  * as db from '../db'
-import { createBroadcaster, tryGetBroadcaster} from "../services/chat-broadcaster"
+import * as db from '../db'
+import { createBroadcaster, tryGetBroadcaster } from "../services/chat-broadcaster"
 import { ChatRequest, ChatResponse, StreamChatSSEData } from "../models";
 import { validateAndTranslateChatRequest } from "../helpers/helpers";
 
@@ -18,6 +18,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         var translatedRequest = validateAndTranslateChatRequest(request.body);
 
         const broadcaster = createBroadcaster(translatedRequest.chat.chatId);
+        broadcaster.emit({ chat: translatedRequest.chat });
         (async () => {
             const stream = await mistralClient.chat.stream({
                 model: 'mistral-small-2506',
@@ -25,7 +26,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
             });
             for await (const chunk of stream) {
                 if (chunk.data.choices[0]?.delta?.content) {
-                    broadcaster.emit({id: 1, append: chunk.data.choices[0].delta.content.toString()});
+                    broadcaster.emit({ id: translatedRequest.responseMessage.id, append: chunk.data.choices[0].delta.content.toString() });
                 }
             }
             broadcaster.close();
@@ -33,10 +34,10 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         reply.send({ chatId: translatedRequest.chat.chatId });
     });
 
-    fastify.get<{ Querystring: {chatId: string}}>("/stream", (req, reply) => {
+    fastify.get<{ Querystring: { chatId: string } }>("/stream", (req, reply) => {
         const { chatId } = req.query
         const broadcaster = tryGetBroadcaster(chatId);
-        if (!broadcaster){
+        if (!broadcaster) {
             console.log("no broadcaster")
             reply.raw.end();
             return;
@@ -52,15 +53,15 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         const unsubscribe = broadcaster.addClient({
             onData: (data) => {
                 if (!isCleanedUp) {
-                    reply.sse({data: JSON.stringify(data)});
+                    reply.sse({ data: JSON.stringify(data) });
                 }
             },
             onClose: () => {
                 if (!isCleanedUp) {
                     const endMessage: StreamChatSSEData = { end: true };
-                    reply.sse({data: JSON.stringify(endMessage)});
+                    reply.sse({ data: JSON.stringify(endMessage) });
                     setTimeout(() => {
-                        if (!isCleanedUp){
+                        if (!isCleanedUp) {
                             reply.raw.end();
                             cleanup();
                         }
