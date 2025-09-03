@@ -22,7 +22,7 @@
   function autoResize() {
     if (textarea) {
       textarea.style.height = "auto"; // reset
-      textarea.style.height = textarea.scrollHeight + "px";
+      textarea.style.height = textarea.scrollHeight + 2 + "px";
     }
   }
 
@@ -45,9 +45,9 @@
 </script>
 
 {#if isEditing}
-  <form onsubmit={handleSubmit} class="chat-input-container">
+  <form onsubmit={handleSubmit} class="input-container">
     <textarea
-      class="chat-input"
+      class="input"
       bind:this={textarea}
       bind:value={text}
       rows="1"
@@ -55,107 +55,61 @@
       onkeydown={handleKeydown}
       placeholder="Type a message..."
     ></textarea>
-    <button class="chat-submit" type="submit">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <path
-          d="M3.4 20.6 22 12 3.4 3.4 5.6 11H14v2H5.6l-2.2 7.6Z"
-          stroke="currentColor"
-          stroke-width="1.6"
-          stroke-linejoin="round"
-        />
-      </svg>
-      <span>Send</span>
-    </button>
+    <div class="input-footer">
+      <button type="submit" class="btn-sm" style="margin: 0;">send</button>
+    </div>
   </form>
 {:else if role == "user"}
-  <div class="message-container user">
+  <div class="message-container">
     <div class="message">
-      <Markdown md={text} />
+      {text}
     </div>
   </div>
 {:else}
-  <div class="message-container">
-    <div class="message">
-      <Markdown md={text} />
-    </div>
-  </div>
+  <article>
+    <Markdown md={text} />
+  </article>
 {/if}
 
 <style>
   .message-container {
     display: flex;
-    justify-content: start;
-    margin-bottom: 4px;
-  }
-  .message-container.user {
-    display: flex;
     justify-content: end;
+    margin-bottom: 8px;
   }
   .message {
-    background: #383838;
-    border: 1px solid var(--muted);
-    border-radius: 16px;
-    padding: 8px;
+    --pico-background-color: var(--pico-form-element-background-color);
+    --pico-border-color: var(--pico-form-element-border-color);
+    --pico-color: var(--pico-form-element-color);
+    border: var(--pico-border-width) solid var(--pico-border-color);
+    background-color: var(--pico-background-color);
+    color: var(--pico-color);
+    border-radius: 12px;
+    padding: 12px;
   }
 
-  .chat-input-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-end; /* align button with textarea baseline */
-    background: #383838;
-    border: 1px solid var(--muted);
-    border-radius: 16px;
-    padding: 8px;
-    transition:
-      box-shadow 0.15s ease,
-      border-color 0.15s ease;
-    max-width: 900px;
-    margin: 0 auto; /* center horizontally */
+  .input-container {
+    position: relative;
+  }
+  .input-footer {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    margin: 2px 2px;
   }
 
-  .chat-input {
-    flex: 1 1 auto;
+  .btn-sm {
+    padding: 3px 10px;
+    font-size: 0.8em;
+    border-radius: 10px;
+  }
+
+  .input {
     min-height: 44px; /* comfortable single-line height */
     max-height: 60vh; /* cap growth */
-    width: 100%;
     resize: none; /* JS will auto-grow */
-    border: 0;
-    outline: none;
-    background: var(--panel-2);
-    color: var(--text);
-    padding: 12px 14px;
+    padding: 12px 12px 34px 12px;
     border-radius: 12px;
     line-height: 1.4;
-  }
-
-  .chat-submit {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    height: 44px;
-    padding: 0 14px 0 12px;
-    border-radius: 12px;
-    border: 1px solid color-mix(in oklab, var(--btn) 35%, var(--muted));
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--btn) 85%, #fff),
-      var(--btn)
-    );
-    color: var(--btn-text);
-    font-weight: 600;
-    cursor: pointer;
-    outline: none;
-    transition:
-      transform 0.04s ease,
-      filter 0.15s ease,
-      opacity 0.15s ease;
   }
 </style>

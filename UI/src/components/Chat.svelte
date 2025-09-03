@@ -49,16 +49,17 @@
   }
 </script>
 
-<h1>this is the chat section</h1>
-{#each currentMessages as message (message.id)}
-  <Message
-    text={message.content}
-    isEditing={false}
-    {onSubmit}
-    role={message.role}
-  ></Message>
-{/each}
-{#if !chat.inProgress}
-  next message:
-  <Message text={""} isEditing={true} {onSubmit} role="user"></Message>
-{/if}
+<div class="container" style="max-width: 1000px; padding: 0 2px;">
+  <h2>Welcome to Rag Chat</h2>
+  {#each currentMessages as message (message.id)}
+    <Message
+      text={message.content}
+      isEditing={false}
+      {onSubmit}
+      role={message.role}
+    ></Message>
+  {/each}
+  {#if !chat.inProgress}
+    <Message text={""} isEditing={true} {onSubmit} role="user"></Message>
+  {/if}
+</div>
