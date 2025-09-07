@@ -9,6 +9,11 @@ export type Message = {
     contextList?: Context[] | undefined
 }
 
+export type SimpleMessage = {
+    content: string,
+    role: Role
+}
+
 export type Context = {
     source: string,
     content: string,
@@ -37,10 +42,10 @@ export type ChatResponse = {
     chatId: string
 }
 
-export type StreamChatSSEData = { chat: Chat } 
-| { id: number, contextList: Context[] | null } 
-| { id: number, append: string } 
-| { end: true}
+export type StreamChatSSEData = { chat: Chat }
+    | { id: number, contextList: Context[] | null }
+    | { id: number, append: string }
+    | { end: true }
 
 export type MistralMessage = {
     role: 'user' | 'assistant' | 'system';

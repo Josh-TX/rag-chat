@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import fastifyStatic from '@fastify/static';
 import path from 'path';
 import chatRoutes from "./routes/chat.route";
+import sourceRoutes from "./routes/source.route";
 import { FastifySSEPlugin } from "fastify-sse-v2";
 import { fileURLToPath } from 'url';
 
@@ -17,6 +18,7 @@ fastify.register(fastifyStatic, {
 
 // Register route modules
 fastify.register(chatRoutes, { prefix: "/chat" });
+fastify.register(sourceRoutes, { prefix: "/source" });
 
 const start = async () => {
   try {

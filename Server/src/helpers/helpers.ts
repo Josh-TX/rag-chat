@@ -1,52 +1,51 @@
-import { Chat, ChatRequest, Message, MistralMessage } from '../models'
+
+import { Chat, SimpleMessage, ChatRequest, Message, Role } from '../models'
+
+
 
 type TranslatedChatRequest = {
     userMessage: Message,
     responseMessage: Message,
-    mistralMessages: MistralMessage[]
+    currentMessages: SimpleMessage[],
     chat: Chat
 }
 
 export function validateAndTranslateChatRequest(chatRequest: ChatRequest): TranslatedChatRequest {
     var messages: Message[] = [];
-    if (!chatRequest.newMessage || !chatRequest.newMessage.content){
+    if (!chatRequest.newMessage || !chatRequest.newMessage.content) {
         throw `newMessage is missing or has no content`;
     }
     var existingMessages = chatRequest.existingMessages || [];
     var currentMessageIds = chatRequest.currentMessageIds || [];
-    for(var id of (chatRequest.currentMessageIds || [])){
+    for (var id of (chatRequest.currentMessageIds || [])) {
         var currentMessage = existingMessages.find(z => z.id == id);
-        if (!currentMessage){
+        if (!currentMessage) {
             throw `currentMessageId ${id} not found among existingMessages`;
         }
-        if (currentMessage.role != "assistant" && currentMessage.role != "user"){
+        if (currentMessage.role != "assistant" && currentMessage.role != "user") {
             throw `message ${id} has invalid role`;
         }
-        if (!currentMessage.content){
+        if (!currentMessage.content) {
             throw `message ${id} has no content`;
         }
         var prevMessage = messages.length ? messages[messages.length - 1] : null;
-        if (prevMessage == null && currentMessage.role != "user"){
+        if (prevMessage == null && currentMessage.role != "user") {
             throw "first currentMessage must be role 'user'";
         }
-        if (prevMessage != null && prevMessage.role == currentMessage.role){
+        if (prevMessage != null && prevMessage.role == currentMessage.role) {
             throw `chat cannot contain consecutive currentMessages by the same role`;
         }
         messages.push(currentMessage);
     }
-    if (currentMessage && currentMessage.role != "assistant"){
+    if (currentMessage && currentMessage.role != "assistant") {
         throw "last currentMessage must be role 'assistant'";
     }
-    var mistralMessages: MistralMessage[] = messages.map(m => {
-        if (m.role == "assistant" || !m.contextList || !m.contextList.length){
-            return {
-                role: m.role,
-                content: m.content
-            };
-        } 
-        throw "not implemented";
-    });
-    mistralMessages.push({
+
+    var currentMessages = messages.map(m => ({
+        role: m.role,
+        content: m.content
+    }))
+    currentMessages.push({
         role: "user",
         content: chatRequest.newMessage.content
     });
@@ -73,7 +72,7 @@ export function validateAndTranslateChatRequest(chatRequest: ChatRequest): Trans
     return {
         userMessage: userMessage,
         responseMessage: responseMessage,
-        mistralMessages: mistralMessages,
+        currentMessages: currentMessages,
         chat: {
             chatId: chatRequest.chatId || "",
             messages: messages,

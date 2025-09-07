@@ -1,5 +1,5 @@
 import { FastifyInstance, } from "fastify";
-import mistralClient from "../mistral-client"
+import chatClient from "../clients/chat-clients"
 import textContent from '../prompts/summary.prompt'
 import * as db from '../db'
 import { createBroadcaster, tryGetBroadcaster } from "../services/chat-broadcaster"
@@ -20,14 +20,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         const broadcaster = createBroadcaster(translatedRequest.chat.chatId);
         broadcaster.emit({ chat: translatedRequest.chat });
         (async () => {
-            const stream = await mistralClient.chat.stream({
-                model: 'mistral-small-2506',
-                messages: translatedRequest.mistralMessages,
-            });
+            const stream = await chatClient.submitChatWithStreaming(translatedRequest.currentMessages);
             for await (const chunk of stream) {
-                if (chunk.data.choices[0]?.delta?.content) {
-                    broadcaster.emit({ id: translatedRequest.responseMessage.id, append: chunk.data.choices[0].delta.content.toString() });
-                }
+                broadcaster.emit({ id: translatedRequest.responseMessage.id, append: chunk });
             }
             broadcaster.close();
         })();
