@@ -7,6 +7,20 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY! });
 
 export var geminiChatClient: IChatClientInterface = {
+    submitChat: async function (messages: SimpleMessage[]) {
+        let translatedMessages: Content[] = messages.map(z => ({
+            role: z.role == "user" ? "user" : "model",
+            parts: [{ text: z.content }]
+        }));
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.0-flash-001',
+            contents: translatedMessages,
+        });
+        if (!response.text) {
+            throw "gemini chat failed to return a response";
+        }
+        return response.text;
+    },
     submitChatWithStreaming: async function* (messages: SimpleMessage[]) {
         let translatedMessages: Content[] = messages.map(z => ({
             role: z.role == "user" ? "user" : "model",

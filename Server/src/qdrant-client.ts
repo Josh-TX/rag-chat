@@ -7,6 +7,18 @@ const client = new QdrantClient({
 });
 
 async function setup() {
+    var { exists } = await client.collectionExists('gemini');
+    if (!exists) {
+        await client.createCollection('gemini', {
+            vectors: {
+                size: 3072,        // Vector dimension
+                distance: 'Cosine' // Distance metric: 'Cosine', 'Euclid', 'Dot'
+            }
+        });
+    }
+}
+
+async function example() {
     try {
         // 1. CREATE A COLLECTION
         // Basic collection with simple vector configuration
@@ -120,4 +132,5 @@ async function setup() {
     }
 }
 setup();
+
 export default client;

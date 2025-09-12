@@ -45,10 +45,6 @@ export function validateAndTranslateChatRequest(chatRequest: ChatRequest): Trans
         role: m.role,
         content: m.content
     }))
-    currentMessages.push({
-        role: "user",
-        content: chatRequest.newMessage.content
-    });
     var userMessageId = Math.max(...existingMessages.map(z => z.id), 0) + 1;
     var responseMessageId = userMessageId + 1;
     var userMessageParentId = currentMessageIds.length ? currentMessageIds[currentMessageIds.length - 1] : undefined;
