@@ -2,11 +2,11 @@ export type Role = "user" | 'assistant'
 
 export type Message = {
     id: number,
-    parentId?: number | undefined,
+    parentId?: number | null,
     role: Role,
     content: string,
     date: Date,
-    contextList?: Context[] | undefined
+    snippets?: Snippet[] | null
 }
 
 export type SimpleMessage = {
@@ -14,14 +14,15 @@ export type SimpleMessage = {
     role: Role
 }
 
-export type Context = {
+export type Snippet = {
     source: string,
+    sectionName: string
     content: string,
 }
 
 export type NewUserMessage = {
     content: string,
-    contextList?: Context[] | undefined
+    snippets?: Snippet[] | null
 }
 
 export type Chat = {
@@ -42,8 +43,13 @@ export type ChatResponse = {
     chatId: string
 }
 
-export type StreamChatSSEData = { chat: Chat }
-    | { id: number, contextList: Context[] | null }
+export type SSEDebugData = { [key: string]: any }
+
+export type StreamChatSSEData =
+    { chat: Chat }
+    | { status: string }
+    | { id: number, debug: SSEDebugData }
+    | { id: number, snippets: Snippet[] | null }
     | { id: number, append: string }
     | { end: true }
 

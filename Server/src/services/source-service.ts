@@ -18,17 +18,19 @@ export type SourceSection = {
     content: string
 }
 
-export type Snippet = {
+export type Chunk = {
     sectionName: string,
     source: string,
     author: string | null
     content: string
+    startIndex: number,
+    endIndex: number,
 }
 
 export type SemanticSearchResult = {
     searchPassage: string,
     vector: number[],
-    snippets: Snippet[]
+    chunks: Chunk[]
 }
 
 export type PointPayload = {
@@ -133,19 +135,21 @@ export async function sementicSearch(searchPassages: string[]): Promise<Semantic
             with_vector: false  // Include vectors in results (optional)
         })
         var payloads = queryResult.points.map(z => <PointPayload>z.payload);
-        var snippets = payloads.map(payload => {
+        var chunks = payloads.map(payload => {
             var section = db.getSectionById(payload.sectionId);
             var sentences: string[] = split(section.content).filter(node => node.type === 'Sentence').map(node => node.raw.trim());
             var content = sentences.slice(payload.startIndex, payload.endIndex + 1).join(" ");
-            var snippet: Snippet = {
+            var chunk: Chunk = {
                 sectionName: payload.sectionName,
                 source: payload.source,
                 author: payload.author,
-                content: content
+                content: content,
+                startIndex: payload.startIndex,
+                endIndex: payload.endIndex
             };
-            return snippet
+            return chunk
         });
-        return snippets;
+        return chunks;
     });
     var chunkss = await Promise.all(chunksPromises);
     var result: SemanticSearchResult[] = [];
@@ -153,7 +157,7 @@ export async function sementicSearch(searchPassages: string[]): Promise<Semantic
         result.push({
             searchPassage: searchPassages[i],
             vector: vectors[i],
-            snippets: chunkss[i]
+            chunks: chunkss[i]
         })
     }
     return result

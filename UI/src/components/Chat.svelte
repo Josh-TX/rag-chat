@@ -2,12 +2,14 @@
   import type { Chat, ChatRequest, ChatResponse } from "@models";
   import Message from "./Message.svelte";
   import { startStream } from "../helpers";
+  import Snippets from "./Snippets.svelte";
   let chat = $state<Chat>({
     chatId: "1",
     currentMessageIds: [],
     messages: [],
     inProgress: false,
   });
+  let status = $state<string>("");
   let currentMessages = $derived(
     chat.currentMessageIds
       .map((id) => chat.messages.find((z) => z.id == id))
@@ -35,9 +37,17 @@
         chat.messages = data.chat.messages;
         chat.inProgress = data.chat.inProgress;
         chat.chatId = data.chat.chatId;
-      } else if ("contextList" in data) {
-        console.log(data.id, data.contextList);
+      } else if ("snippets" in data) {
+        var message = chat.messages.find((z) => z.id == data.id);
+        if (message) {
+          message.snippets = data.snippets;
+        }
+      } else if ("debug" in data) {
+        console.log(data.id, data.debug);
+      } else if ("status" in data) {
+        status = data.status;
       } else if ("append" in data) {
+        status = "";
         var message = chat.messages.find((z) => z.id == data.id);
         if (message) {
           message.content += data.append;
@@ -58,8 +68,12 @@
       {onSubmit}
       role={message.role}
     ></Message>
+    {#if message.snippets && message.snippets.length}
+      <Snippets snippets={message.snippets}></Snippets>
+    {/if}
   {/each}
   {#if !chat.inProgress}
     <Message text={""} isEditing={true} {onSubmit} role="user"></Message>
   {/if}
+  {status}
 </div>
